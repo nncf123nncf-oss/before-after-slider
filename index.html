@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ビフォーアフター・スライダーメーカー｜左右にドラッグして見比べられるページを作る</title>
+<meta name="description" content="Before写真とAfter写真を選ぶと、左右にドラッグして見比べられる比較ページ（HTMLファイル1つ）を作れます。写真はブラウザ内だけで処理され、サーバーには送信されません。ログイン不要の無料ツールです。">
+<style>
+  :root {
+    --bg: #F4F5F7;
+    --ink: #1F2328;
+    --muted: #5B6470;
+    --line: #D0D5DB;
+    --card: #FFFFFF;
+    --accent: #1F5FBF;
+    --accent-ink: #FFFFFF;
+    --danger: #B3261E;
+    --warn: #8A5A00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171B;
+      --ink: #E8EAED;
+      --muted: #A3ABB5;
+      --line: #3A4048;
+      --card: #1D2126;
+      --accent: #7AB0FF;
+      --accent-ink: #0B1626;
+      --danger: #FF8A80;
+      --warn: #F2C572;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font-family: "Hiragino Sans", "Yu Gothic", "BIZ UDPGothic", "Noto Sans JP", system-ui, sans-serif; line-height: 1.6; }
+  body { padding: 0 16px; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 0 40px; }
+  h1 { font-size: 20px; line-height: 1.4; margin: 0 0 6px; }
+  .lead { margin: 0 0 20px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 0 0 16px; }
+  h2 { font-size: 15px; margin: 0 0 10px; }
+
+  .pickrow { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .pickrow:first-of-type { border-top: 0; padding-top: 0; }
+  .thumb { flex: 0 0 56px; width: 56px; height: 56px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg);
+    object-fit: cover; display: block; }
+  .thumb.empty { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 11px; }
+  .pickbody { flex: 1 1 auto; min-width: 0; }
+  .picktitle { font-size: 14px; font-weight: 700; margin: 0 0 2px; }
+  .pickname { font-size: 12px; color: var(--muted); margin: 0 0 6px; overflow-wrap: anywhere; line-height: 1.4; }
+
+  .btn { font: inherit; font-size: 15px; font-weight: 700; padding: 12px 16px; border-radius: 6px; border: 1px solid var(--accent);
+    background: var(--accent); color: var(--accent-ink); cursor: pointer; min-height: 48px; width: 100%; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn.secondary { background: var(--card); color: var(--ink); border-color: var(--line); }
+  .btn.small { font-size: 13px; padding: 8px 12px; min-height: 44px; width: auto; }
+  .filebtn { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+  .filebtn input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
+  .filebtn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .linklike { font: inherit; font-size: 14px; color: var(--accent); background: none; border: 0; padding: 10px 0; min-height: 44px;
+    text-decoration: underline; cursor: pointer; text-align: left; }
+
+  .seg { display: flex; gap: 8px; }
+  .seg button { flex: 1 1 0; min-width: 0; font: inherit; font-size: 14px; font-weight: 700; padding: 10px 6px; min-height: 44px;
+    border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  .previewbox { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--bg); }
+  .previewbox .ba { margin: 0 auto; }
+  .placeholder { margin: 0; padding: 32px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  .note { font-size: 12px; color: var(--muted); margin: 8px 0 0; line-height: 1.5; }
+  .note.warn { color: var(--warn); font-weight: 700; }
+  .btncol { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .msg { min-height: 1.4em; font-size: 13px; margin: 10px 0 0; color: var(--muted); }
+  .msg.error { color: var(--danger); font-weight: 700; }
+
+  .mw-footer { box-sizing: border-box; width: 100%; max-width: 100%; margin: 24px 0 0; padding: 16px; background: #F7F7F8;
+    border: 1px solid #D8D8DC; border-radius: 6px; color: #3A3A3E; font-family: system-ui, sans-serif; font-size: 12px; line-height: 1.7; }
+  .mw-footer p { margin: 0 0 6px; }
+  .mw-footer p:last-child { margin-bottom: 0; }
+  .mw-footer a { color: #0B5AA6; }
+</style>
+<style id="sliderCss"></style>
+</head>
+<body>
+<main>
+  <h1>ビフォーアフター・スライダーメーカー</h1>
+  <p class="lead">Before写真とAfter写真を選ぶと、左右にドラッグして見比べられるページを作れます。できたHTMLファイルは、そのまま自分のサイトに置くか、コードをコピーして貼り付けられます。ログイン不要、写真はこのブラウザの中だけで処理され、送信されません。</p>
+
+  <div class="panel">
+    <h2>写真を選ぶ</h2>
+    <div class="pickrow">
+      <img class="thumb empty" id="beforeThumb" alt="" hidden>
+      <div class="thumb empty" id="beforeThumbEmpty">未選択</div>
+      <div class="pickbody">
+        <p class="picktitle">Before写真</p>
+        <p class="pickname" id="beforeName">まだ選んでいません</p>
+        <label class="btn secondary small filebtn">写真を選ぶ<input type="file" accept="image/*" id="beforeFile" aria-label="Before写真を選ぶ"></label>
+      </div>
+    </div>
+    <div class="pickrow">
+      <img class="thumb empty" id="afterThumb" alt="" hidden>
+      <div class="thumb empty" id="afterThumbEmpty">未選択</div>
+      <div class="pickbody">
+        <p class="picktitle">After写真</p>
+        <p class="pickname" id="afterName">まだ選んでいません</p>
+        <label class="btn secondary small filebtn">写真を選ぶ<input type="file" accept="image/*" id="afterFile" aria-label="After写真を選ぶ"></label>
+      </div>
+    </div>
+    <button type="button" class="linklike" id="sampleBtn">写真がなくても、サンプルで試す</button>
+    <p class="msg" id="loadMsg" role="status" aria-live="polite"></p>
+  </div>
+
+  <div class="panel">
+    <h2>ラベルの表記</h2>
+    <div class="seg" id="langSeg">
+      <button type="button" data-lang="en" aria-pressed="true">Before / After</button>
+      <button type="button" data-lang="ja" aria-pressed="false">ビフォー / アフター</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>プレビュー</h2>
+    <div class="previewbox" id="previewBox">
+      <p class="placeholder" id="placeholder">Before写真とAfter写真を両方選ぶと、ここに見比べるスライダーが出ます。</p>
+    </div>
+    <p class="note" id="sampleNote" hidden>これはサンプルのイラストです。実際の施術・作業の写真ではありません。</p>
+    <p class="note" id="cropNote" hidden>After写真は縦横比がBeforeと違うため、中央を基準に切り抜いて表示します。</p>
+    <p class="note" id="guide">つまみ（縦線）を左右にドラッグするか、矢印キーで動かせます。</p>
+  </div>
+
+  <div class="panel">
+    <h2>書き出す</h2>
+    <p class="note" style="margin-top:0" id="sizeNote">書き出しHTMLの大きさ: 写真を2枚選ぶと表示します</p>
+    <p class="note warn" id="sizeWarn" hidden>重くなります。写真を減らすか小さくしてください。</p>
+    <p class="note" id="iosNote" hidden>iPhone・iPadでは「HTMLファイルを保存」が働かない場合があります。その場合は「HTML全文をコピー」を使ってください。</p>
+    <div class="btncol" id="btnCol">
+      <button type="button" class="btn" id="saveBtn" disabled>HTMLファイルを保存</button>
+      <button type="button" class="btn secondary" id="copyBtn" disabled>HTML全文をコピー</button>
+    </div>
+    <p class="msg" id="exportMsg" role="status" aria-live="polite"></p>
+    <p class="note">サイトの種類によっては貼り付けられない場合があります。写真に人が写っている場合は、撮影・公開について本人への確認をお願いします。ビフォーアフターの効果を保証するものではありません。</p>
+  </div>
+
+  <footer class="mw-footer">
+    <p>みちAIワークス（MICHI AI WORKS）／代表 田中　泉</p>
+    <p>運営: <a href="https://michi-portfolio.vercel.app/" rel="noopener">みちAIワークス 公式サイト</a>（https://michi-portfolio.vercel.app/ ）／ お問い合わせ: <a href="mailto:nncf123nncf@gmail.com">nncf123nncf@gmail.com</a></p>
+    <p>選んだ写真はすべてブラウザ内だけで処理され、サーバーには送信されません。HTMLの書き出しも端末内だけで行われます。アクセス解析（Cloudflare Web Analyticsを使い、ページの閲覧数を計測しています。選んだ写真は送信しません）。</p>
+    <p>ログイン・会員登録・パスワードの入力を求めることはありません。</p>
+  </footer>
+</main>
+
+<!-- Cloudflare Web Analytics（ページの閲覧に関する計測。入力内容は送信しません） -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon='{"token": "b4c9f7e78daf4edb84ef52b88633f649"}'></script>
+<!-- End Cloudflare Web Analytics -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- スライダー本体（プレビューと書き出しHTMLで同じものを使う） ---------- */
+  var SLIDER_CSS =
+    '.ba{position:relative;width:100%;max-width:calc(70vh * var(--ar));aspect-ratio:var(--ar);overflow:hidden;' +
+    'background:#888;touch-action:pan-y;-webkit-user-select:none;user-select:none;margin:0 auto}' +
+    '.ba-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}' +
+    '.ba-before{clip-path:inset(0 calc(100% - var(--p)) 0 0)}' +
+    '.ba-tag{position:absolute;top:8px;padding:2px 8px;border-radius:4px;background:rgba(0,0,0,.6);color:#fff;' +
+    'font:700 12px/1.6 system-ui,sans-serif;pointer-events:none}' +
+    '.ba-tag-before{left:8px}.ba-tag-after{right:8px}' +
+    '.ba-line{position:absolute;top:0;bottom:0;left:var(--p);width:2px;margin-left:-1px;background:#fff;' +
+    'box-shadow:0 0 0 1px rgba(0,0,0,.35);pointer-events:none}' +
+    '.ba-handle{position:absolute;top:50%;left:var(--p);width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;' +
+    'background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.35),0 1px 4px rgba(0,0,0,.4);color:#333;pointer-events:none;' +
+    'display:flex;align-items:center;justify-content:center;font:10px/1 system-ui,sans-serif;letter-spacing:2px}' +
+    '.ba-range{position:absolute;top:0;left:-22px;width:calc(100% + 44px);height:100%;margin:0;padding:0;opacity:0;' +
+    'cursor:ew-resize;-webkit-appearance:none;appearance:none;background:transparent}' +
+    '.ba-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:44px;height:44px}' +
+    '.ba-range::-moz-range-thumb{width:44px;height:44px;border:0}' +
+    '.ba:focus-within .ba-handle{outline:3px solid #1F5FBF;outline-offset:2px}';
+
+  function bindSlider(root) {
+    var r = root.querySelector('.ba-range');
+    function update() { root.style.setProperty('--p', r.value + '%'); }
+    r.addEventListener('input', update);
+    r.addEventListener('change', update);
+    update();
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function sliderMarkup(beforeUrl, afterUrl, labels, ratio, pos) {
+    return '<div class="ba" style="--ar:' + ratio.toFixed(4) + ';--p:' + pos + '%">' +
+      '<img class="ba-img ba-after" src="' + afterUrl + '" alt="' + esc(labels[1]) + '">' +
+      '<img class="ba-img ba-before" src="' + beforeUrl + '" alt="' + esc(labels[0]) + '">' +
+      '<span class="ba-tag ba-tag-before">' + esc(labels[0]) + '</span>' +
+      '<span class="ba-tag ba-tag-after">' + esc(labels[1]) + '</span>' +
+      '<span class="ba-line"></span><span class="ba-handle">◀▶</span>' +
+      '<input class="ba-range" type="range" min="0" max="100" step="0.1" value="' + pos + '" aria-label="' +
+      esc(labels[0] + 'と' + labels[1] + 'の境目を動かす') + '">' +
+      '</div>';
+  }
+
+  function buildExportHtml(beforeUrl, afterUrl, labels, ratio) {
+    return '<!DOCTYPE html>\n<html lang="ja"><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<title>' + esc(labels[0] + ' / ' + labels[1]) + '</title>' +
+      '<style>html,body{margin:0;padding:0;background:transparent}' + SLIDER_CSS + '</style></head><body>' +
+      sliderMarkup(beforeUrl, afterUrl, labels, ratio, 50) +
+      '<script>(' + bindSlider.toString() + ')(document.querySelector(".ba"));<\/script>' +
+      '</body></html>\n';
+  }
+
+  document.getElementById('sliderCss').textContent = SLIDER_CSS;
+
+  /* ---------- 状態 ---------- */
+  var state = {
+    before: null,   /* {url, w, h, name, sample} */
+    after: null,
+    lang: 'en'
+  };
+  var seq = { before: 0, after: 0 };
+  var lastHtml = '';
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function labels() {
+    return state.lang === 'ja' ? ['ビフォー', 'アフター'] : ['Before', 'After'];
+  }
+
+  /* iPadOSはUA上Macを名乗るため、タッチの有無も併せて見る。 */
+  function isApplePortable() {
+    var ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod/.test(ua)) { return true; }
+    return /Macintosh/.test(ua) && (navigator.maxTouchPoints > 1 || 'ontouchend' in document);
+  }
+  var IS_IOS = isApplePortable();
+  window.__isApplePortable = isApplePortable;
+
+  /* ---------- 画像の読み込み（縮小・向き補正） ---------- */
+  var MAX_EDGE = 1200;
+
+  function loadBitmap(file) {
+    var tryBitmap = window.createImageBitmap ?
+      createImageBitmap(file, { imageOrientation: 'from-image' }).catch(function () { return null; }) :
+      Promise.resolve(null);
+    return tryBitmap.then(function (bmp) {
+      if (bmp) { return { src: bmp, w: bmp.width, h: bmp.height, close: function () { if (bmp.close) { bmp.close(); } } }; }
+      return new Promise(function (resolve, reject) {
+        var u = URL.createObjectURL(file);
+        var im = new Image();
+        im.onload = function () {
+          URL.revokeObjectURL(u);
+          resolve({ src: im, w: im.naturalWidth, h: im.naturalHeight, close: function () {} });
+        };
+        im.onerror = function () { URL.revokeObjectURL(u); reject(new Error('load')); };
+        im.src = u;
+      });
+    });
+  }
+
+  function shrinkFile(file) {
+    return loadBitmap(file).then(function (b) {
+      if (!b.w || !b.h) { b.close(); throw new Error('size'); }
+      var k = Math.min(1, MAX_EDGE / Math.max(b.w, b.h));
+      var w = Math.max(1, Math.round(b.w * k));
+      var h = Math.max(1, Math.round(b.h * k));
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      var g = c.getContext('2d');
+      g.fillStyle = '#fff';
+      g.fillRect(0, 0, w, h);
+      g.drawImage(b.src, 0, 0, w, h);
+      b.close();
+      return { url: c.toDataURL('image/jpeg', 0.82), w: w, h: h };
+    });
+  }
+
+  function setSlot(which, data) {
+    state[which] = data;
+    var thumb = $(which + 'Thumb'), empty = $(which + 'ThumbEmpty');
+    if (data) {
+      thumb.src = data.url; thumb.hidden = false; thumb.className = 'thumb';
+      empty.hidden = true;
+      $(which + 'Name').textContent = data.name + '（' + data.w + '×' + data.h + 'px）';
+    } else {
+      thumb.hidden = true; empty.hidden = false;
+      $(which + 'Name').textContent = 'まだ選んでいません';
+    }
+    render();
+  }
+
+  function onPick(which) {
+    return function (ev) {
+      var f = ev.target.files && ev.target.files[0];
+      if (!f) { return; }
+      var my = ++seq[which];
+      $('loadMsg').className = 'msg';
+      $('loadMsg').textContent = '写真を読み込んでいます…';
+      shrinkFile(f).then(function (d) {
+        if (my !== seq[which]) { return; }
+        d.name = f.name || '選んだ写真';
+        d.sample = false;
+        $('loadMsg').textContent = '';
+        setSlot(which, d);
+      }).catch(function () {
+        if (my !== seq[which]) { return; }
+        $('loadMsg').className = 'msg error';
+        $('loadMsg').textContent = '写真を読み込めませんでした。別の画像でお試しください。';
+      });
+      ev.target.value = '';
+    };
+  }
+  $('beforeFile').addEventListener('change', onPick('before'));
+  $('afterFile').addEventListener('change', onPick('after'));
+
+  /* ---------- サンプル（コードで描いた自作イラスト。整理収納の棚） ---------- */
+  var HUES = [
+    ['#2F5D9E', '#3F73B8', '#5A8BCB', '#7AA3D9', '#264C82', '#4F7FC0', '#6C97D2', '#345F9C'],
+    ['#D9822B', '#E59A45', '#EDB066', '#C97220', '#F0BE7E', '#DE8D36', '#E8A552', '#CB7A25'],
+    ['#3E8E5A', '#52A56E', '#6DB985', '#2F7548', '#8CCB9F', '#48996A', '#5FB07B', '#377F50']
+  ];
+
+  function rng(seed) {
+    var s = seed;
+    return function () { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
+  }
+
+  function drawShelf(messy) {
+    var W = 900, H = 675;
+    var c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var g = c.getContext('2d');
+    g.fillStyle = '#EFE7DA'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#D8CDBB'; g.fillRect(0, 610, W, H - 610);
+    /* 棚の枠 */
+    var L = 95, R = 805, T = 70, B = 600;
+    g.fillStyle = '#9A6B3F'; g.fillRect(L, T, R - L, B - T);
+    g.fillStyle = '#F6F0E6'; g.fillRect(L + 14, T + 14, R - L - 28, B - T - 28);
+    var boards = [232, 408, 584];
+    g.fillStyle = '#9A6B3F';
+    boards.forEach(function (y, i) { if (i < 2) { g.fillRect(L + 14, y, R - L - 28, 14); } });
+    /* 24個の物（3色系×8） */
+    var items = [];
+    for (var h = 0; h < 3; h++) {
+      for (var k = 0; k < 8; k++) {
+        items.push({ hue: h, color: HUES[h][k], w: 56 + (k % 3) * 4, hgt: 86 + ((k * 5) % 3) * 6 });
+      }
+    }
+    var rand = rng(20260930);
+    var order = items.slice();
+    if (messy) {
+      for (var i = order.length - 1; i > 0; i--) {
+        var j = Math.floor(rand() * (i + 1));
+        var t = order[i]; order[i] = order[j]; order[j] = t;
+      }
+    }
+    var slotW = 82, x0 = L + 30;
+    order.forEach(function (it, idx) {
+      var row = Math.floor(idx / 8), col = idx % 8;
+      var baseY = boards[row] - (row === 2 ? 14 : 0);
+      var cx, w = it.w, hh = it.hgt, rot = 0, lying = false;
+      if (messy) {
+        cx = x0 + col * slotW + w / 2 + (rand() - 0.5) * 34;
+        rot = (rand() - 0.5) * 0.55;
+        lying = (idx % 6 === 2);
+        if (!lying) { hh = hh + Math.round((rand() - 0.5) * 30); }
+      } else {
+        cx = x0 + col * slotW + slotW / 2 - 10;
+      }
+      g.save();
+      g.translate(cx, baseY);
+      if (lying) {
+        g.rotate(rot * 0.3);
+        g.fillStyle = it.color; g.fillRect(-hh / 2, -w, hh, w);
+        g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(-hh / 2 + 14, -w + 8, 12, w - 16);
+        g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(-hh / 2, -5, hh, 5);
+      } else {
+        g.rotate(rot);
+        g.fillStyle = it.color; g.fillRect(-w / 2, -hh, w, hh);
+        g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(-w / 2 + 6, -hh + 16, w - 12, 12);
+        g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(-w / 2, -6, w, 6);
+      }
+      g.restore();
+    });
+    /* 影 */
+    g.fillStyle = 'rgba(0,0,0,.08)';
+    g.fillRect(L, B, R - L, 10);
+    return { url: c.toDataURL('image/jpeg', 0.82), w: W, h: H };
+  }
+
+  $('sampleBtn').addEventListener('click', function () {
+    seq.before++; seq.after++;
+    var b = drawShelf(true), a = drawShelf(false);
+    b.name = 'サンプル：散らかった棚（イラスト）'; b.sample = true;
+    a.name = 'サンプル：整えた棚（イラスト）'; a.sample = true;
+    $('loadMsg').className = 'msg'; $('loadMsg').textContent = '';
+    state.before = b; state.after = a;
+    ['before', 'after'].forEach(function (w) { setSlot(w, state[w]); });
+  });
+
+  /* ---------- 言語切替 ---------- */
+  Array.prototype.forEach.call($('langSeg').querySelectorAll('button'), function (btn) {
+    btn.addEventListener('click', function () {
+      state.lang = btn.getAttribute('data-lang');
+      Array.prototype.forEach.call($('langSeg').querySelectorAll('button'), function (x) {
+        x.setAttribute('aria-pressed', x === btn ? 'true' : 'false');
+      });
+      render();
+    });
+  });
+
+  /* ---------- 描画 ---------- */
+  function fmtSize(bytes) {
+    var mb = bytes / (1024 * 1024);
+    if (mb >= 1) { return '約' + mb.toFixed(1) + 'MB'; }
+    return '約' + Math.max(1, Math.round(bytes / 1024)) + 'KB';
+  }
+
+  function render() {
+    var both = !!(state.before && state.after);
+    var box = $('previewBox');
+    var prevPos = 50;
+    var oldRange = box.querySelector('.ba-range');
+    if (oldRange) { prevPos = oldRange.value; }
+    if (!both) {
+      box.innerHTML = '<p class="placeholder" id="placeholder">' +
+        (state.before || state.after ? 'もう一方の写真も選ぶと、ここに見比べるスライダーが出ます。' :
+          'Before写真とAfter写真を両方選ぶと、ここに見比べるスライダーが出ます。') + '</p>';
+      $('saveBtn').disabled = true; $('copyBtn').disabled = true;
+      $('sizeNote').textContent = '書き出しHTMLの大きさ: 写真を2枚選ぶと表示します';
+      $('sizeWarn').hidden = true; $('cropNote').hidden = true; $('sampleNote').hidden = true;
+      $('exportMsg').className = 'msg';
+      $('exportMsg').textContent = '写真を2枚選ぶと、保存とコピーが使えます。';
+      lastHtml = '';
+      return;
+    }
+    var ratio = state.before.w / state.before.h;
+    var L = labels();
+    box.innerHTML = sliderMarkup(state.before.url, state.after.url, L, ratio, prevPos);
+    bindSlider(box.querySelector('.ba'));
+
+    var ar = state.after.w / state.after.h;
+    $('cropNote').hidden = !(Math.abs(ar - ratio) / ratio > 0.015);
+    $('sampleNote').hidden = !(state.before.sample || state.after.sample);
+
+    lastHtml = buildExportHtml(state.before.url, state.after.url, L, ratio);
+    var bytes = new Blob([lastHtml], { type: 'text/html' }).size;
+    $('sizeNote').textContent = '書き出しHTMLの大きさ: ' + fmtSize(bytes);
+    $('sizeWarn').hidden = !(bytes > 3 * 1024 * 1024);
+    $('saveBtn').disabled = false; $('copyBtn').disabled = false;
+    $('exportMsg').className = 'msg';
+    $('exportMsg').textContent = '';
+  }
+
+  /* ---------- 書き出し ---------- */
+  function say(text, isError) {
+    var m = $('exportMsg');
+    m.className = isError ? 'msg error' : 'msg';
+    m.textContent = text;
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.left = '0'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { ta.setSelectionRange(0, text.length); } catch (e) {}
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  $('copyBtn').addEventListener('click', function () {
+    if (!lastHtml) { return; }
+    var text = lastHtml;
+    var done = function () { say('HTML全文をコピーしました。貼り付け先で貼り付けてください。'); };
+    var fail = function () {
+      if (fallbackCopy(text)) { done(); } else { say('コピーできませんでした。「HTMLファイルを保存」をお試しください。', true); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fail);
+    } else { fail(); }
+  });
+
+  $('saveBtn').addEventListener('click', function () {
+    if (!lastHtml) { return; }
+    var html = lastHtml;
+    if (IS_IOS) {
+      /* iOSは a.download を無視する。共有シートは未検証の補助経路として試し、
+         使えなければコピーを案内する。File化は同期で行う（利用者の操作中に開くため）。 */
+      try {
+        var file = new File([html], 'before-after.html', { type: 'text/html' });
+        if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+          navigator.share({ files: [file] }).then(function () { say('共有シートを開きました。'); },
+            function (e) { if (!e || e.name !== 'AbortError') { say('共有できませんでした。「HTML全文をコピー」をお使いください。', true); } });
+          return;
+        }
+      } catch (e) { /* 下のメッセージへ */ }
+      say('この端末ではHTMLファイルを保存できないため、「HTML全文をコピー」をお使いください。', true);
+      return;
+    }
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'before-after.html';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    say('before-after.html を保存しました。');
+  });
+
+  /* iOSではコピーを主導線にする */
+  if (IS_IOS) {
+    var col = $('btnCol');
+    col.insertBefore($('copyBtn'), $('saveBtn'));
+    $('copyBtn').className = 'btn';
+    $('saveBtn').className = 'btn secondary';
+    $('iosNote').hidden = false;
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
