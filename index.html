@@ -36,7 +36,7 @@
     font-family: "Hiragino Sans", "Yu Gothic", "BIZ UDPGothic", "Noto Sans JP", system-ui, sans-serif; line-height: 1.6; }
   body { padding: 0 16px; }
   main { max-width: 720px; margin: 0 auto; padding: 24px 0 40px; }
-  h1 { font-size: 20px; line-height: 1.4; margin: 0 0 6px; }
+  h1 { font-size: 18px; line-height: 1.4; margin: 0 0 6px; }
   .lead { margin: 0 0 20px; color: var(--muted); font-size: 13px; line-height: 1.6; }
   .panel { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 0 0 16px; }
   h2 { font-size: 15px; margin: 0 0 10px; }
@@ -68,7 +68,7 @@
   .seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
   .previewbox { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--bg); }
-  .previewbox .ba { margin: 0 auto; }
+  .previewbox .mwba { margin: 0 auto; }
   .placeholder { margin: 0; padding: 32px 16px; text-align: center; color: var(--muted); font-size: 13px; }
 
   .note { font-size: 12px; color: var(--muted); margin: 8px 0 0; line-height: 1.5; }
@@ -88,7 +88,7 @@
 <body>
 <main>
   <h1>ビフォーアフター・スライダーメーカー</h1>
-  <p class="lead">Before写真とAfter写真を選ぶと、左右にドラッグして見比べられるページを作れます。できたHTMLファイルは、そのまま自分のサイトに置くか、コードをコピーして貼り付けられます。ログイン不要、写真はこのブラウザの中だけで処理され、送信されません。</p>
+  <p class="lead">Before写真とAfter写真を選ぶと、左右にドラッグして見比べられるページを作れます。できたHTMLファイルは、自分のサイトに置くか、貼り付けられる場合はコードをコピーして使えます。ログイン不要、写真はこのブラウザの中だけで処理され、送信されません。</p>
 
   <div class="panel">
     <h2>写真を選ぶ</h2>
@@ -142,7 +142,7 @@
       <button type="button" class="btn secondary" id="copyBtn" disabled>HTML全文をコピー</button>
     </div>
     <p class="msg" id="exportMsg" role="status" aria-live="polite"></p>
-    <p class="note">サイトの種類によっては貼り付けられない場合があります。写真に人が写っている場合は、撮影・公開について本人への確認をお願いします。ビフォーアフターの効果を保証するものではありません。</p>
+    <p class="note">サイトの種類によっては貼り付けられない場合があります。貼り付け先でscriptが使えないと、つまみは動きません。幅はページに合わせて自動で決まり、高さは表示領域の70%までです。写真に人が写っている場合は、撮影・公開について本人への確認をお願いします。ビフォーアフターの効果を保証するものではありません。</p>
   </div>
 
   <footer class="mw-footer">
@@ -164,27 +164,31 @@
 
   /* ---------- スライダー本体（プレビューと書き出しHTMLで同じものを使う） ---------- */
   var SLIDER_CSS =
-    '.ba{position:relative;width:100%;max-width:calc(70vh * var(--ar));aspect-ratio:var(--ar);overflow:hidden;' +
+    '.mwba{position:relative;width:100%;max-width:calc(70vh * var(--ar));aspect-ratio:var(--ar);overflow:hidden;' +
     'background:#888;touch-action:pan-y;-webkit-user-select:none;user-select:none;margin:0 auto}' +
-    '.ba-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}' +
-    '.ba-before{clip-path:inset(0 calc(100% - var(--p)) 0 0)}' +
-    '.ba-tag{position:absolute;top:8px;padding:2px 8px;border-radius:4px;background:rgba(0,0,0,.6);color:#fff;' +
+    '.mwba-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}' +
+    '.mwba-before{clip-path:inset(0 calc(100% - var(--p)) 0 0)}' +
+    '.mwba-tag{position:absolute;top:8px;padding:2px 8px;border-radius:4px;background:rgba(0,0,0,.6);color:#fff;' +
     'font:700 12px/1.6 system-ui,sans-serif;pointer-events:none}' +
-    '.ba-tag-before{left:8px}.ba-tag-after{right:8px}' +
-    '.ba-line{position:absolute;top:0;bottom:0;left:var(--p);width:2px;margin-left:-1px;background:#fff;' +
+    '.mwba-tag-before{left:8px}.mwba-tag-after{right:8px}' +
+    '.mwba-line{position:absolute;top:0;bottom:0;left:var(--p);width:2px;margin-left:-1px;background:#fff;' +
     'box-shadow:0 0 0 1px rgba(0,0,0,.35);pointer-events:none}' +
-    '.ba-handle{position:absolute;top:50%;left:var(--p);width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;' +
+    '.mwba-handle{position:absolute;top:50%;left:var(--p);width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;' +
     'background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.35),0 1px 4px rgba(0,0,0,.4);color:#333;pointer-events:none;' +
     'display:flex;align-items:center;justify-content:center;font:10px/1 system-ui,sans-serif;letter-spacing:2px}' +
-    '.ba-range{position:absolute;top:0;left:-22px;width:calc(100% + 44px);height:100%;margin:0;padding:0;opacity:0;' +
+    '.mwba-range{position:absolute;top:0;left:-22px;width:calc(100% + 44px);height:100%;margin:0;padding:0;opacity:0;' +
     'cursor:ew-resize;-webkit-appearance:none;appearance:none;background:transparent}' +
-    '.ba-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:44px;height:44px}' +
-    '.ba-range::-moz-range-thumb{width:44px;height:44px;border:0}' +
-    '.ba:focus-within .ba-handle{outline:3px solid #1F5FBF;outline-offset:2px}';
+    '.mwba-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:44px;height:44px}' +
+    '.mwba-range::-moz-range-thumb{width:44px;height:44px;border:0}' +
+    '.mwba:focus-within .mwba-handle{outline:3px solid #1F5FBF;outline-offset:2px}';
 
   function bindSlider(root) {
-    var r = root.querySelector('.ba-range');
-    function update() { root.style.setProperty('--p', r.value + '%'); }
+    var r = root.querySelector('.mwba-range');
+    /* この関数は書き出しHTMLにそのまま埋め込まれる。外の変数に依存させないこと。 */
+    function update() {
+      root.style.setProperty('--p', r.value + '%');
+      r.setAttribute('aria-valuetext', '境目の位置 ' + Math.round(r.value) + '%');
+    }
     r.addEventListener('input', update);
     r.addEventListener('change', update);
     update();
@@ -195,13 +199,13 @@
   }
 
   function sliderMarkup(beforeUrl, afterUrl, labels, ratio, pos) {
-    return '<div class="ba" style="--ar:' + ratio.toFixed(4) + ';--p:' + pos + '%">' +
-      '<img class="ba-img ba-after" src="' + afterUrl + '" alt="' + esc(labels[1]) + '">' +
-      '<img class="ba-img ba-before" src="' + beforeUrl + '" alt="' + esc(labels[0]) + '">' +
-      '<span class="ba-tag ba-tag-before">' + esc(labels[0]) + '</span>' +
-      '<span class="ba-tag ba-tag-after">' + esc(labels[1]) + '</span>' +
-      '<span class="ba-line"></span><span class="ba-handle">◀▶</span>' +
-      '<input class="ba-range" type="range" min="0" max="100" step="0.1" value="' + pos + '" aria-label="' +
+    return '<div class="mwba" style="--ar:' + ratio.toFixed(4) + ';--p:' + pos + '%">' +
+      '<img class="mwmwba-img mwba-after" src="' + afterUrl + '" alt="' + esc(labels[1]) + '">' +
+      '<img class="mwmwba-img mwba-before" src="' + beforeUrl + '" alt="' + esc(labels[0]) + '">' +
+      '<span class="mwmwba-tag mwba-tag-before">' + esc(labels[0]) + '</span>' +
+      '<span class="mwmwba-tag mwba-tag-after">' + esc(labels[1]) + '</span>' +
+      '<span class="mwba-line"></span><span class="mwba-handle">◀▶</span>' +
+      '<input class="mwba-range" type="range" min="0" max="100" step="1" value="' + pos + '" aria-label="' +
       esc(labels[0] + 'と' + labels[1] + 'の境目を動かす') + '">' +
       '</div>';
   }
@@ -210,9 +214,9 @@
     return '<!DOCTYPE html>\n<html lang="ja"><head><meta charset="utf-8">' +
       '<meta name="viewport" content="width=device-width, initial-scale=1">' +
       '<title>' + esc(labels[0] + ' / ' + labels[1]) + '</title>' +
-      '<style>html,body{margin:0;padding:0;background:transparent}' + SLIDER_CSS + '</style></head><body>' +
+      '<style>' + SLIDER_CSS + '</style></head><body style="margin:0">' +
       sliderMarkup(beforeUrl, afterUrl, labels, ratio, 50) +
-      '<script>(' + bindSlider.toString() + ')(document.querySelector(".ba"));<\/script>' +
+      '<script>(' + bindSlider.toString() + ')(document.currentScript.previousElementSibling);<\/script>' +
       '</body></html>\n';
   }
 
@@ -245,21 +249,22 @@
   /* ---------- 画像の読み込み（縮小・向き補正） ---------- */
   var MAX_EDGE = 1200;
 
+  /* 向き補正: <img>はEXIFの向きを既定で反映するため、まずImage要素で読む。
+     Imageで読めなかったときだけcreateImageBitmap（向き補正オプション付き）に切り替える。 */
   function loadBitmap(file) {
-    var tryBitmap = window.createImageBitmap ?
-      createImageBitmap(file, { imageOrientation: 'from-image' }).catch(function () { return null; }) :
-      Promise.resolve(null);
-    return tryBitmap.then(function (bmp) {
-      if (bmp) { return { src: bmp, w: bmp.width, h: bmp.height, close: function () { if (bmp.close) { bmp.close(); } } }; }
-      return new Promise(function (resolve, reject) {
-        var u = URL.createObjectURL(file);
-        var im = new Image();
-        im.onload = function () {
-          URL.revokeObjectURL(u);
-          resolve({ src: im, w: im.naturalWidth, h: im.naturalHeight, close: function () {} });
-        };
-        im.onerror = function () { URL.revokeObjectURL(u); reject(new Error('load')); };
-        im.src = u;
+    return new Promise(function (resolve, reject) {
+      var u = URL.createObjectURL(file);
+      var im = new Image();
+      im.onload = function () {
+        URL.revokeObjectURL(u);
+        resolve({ src: im, w: im.naturalWidth, h: im.naturalHeight, close: function () {} });
+      };
+      im.onerror = function () { URL.revokeObjectURL(u); reject(new Error('load')); };
+      im.src = u;
+    }).catch(function (err) {
+      if (!window.createImageBitmap) { throw err; }
+      return createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) {
+        return { src: bmp, w: bmp.width, h: bmp.height, close: function () { if (bmp.close) { bmp.close(); } } };
       });
     });
   }
@@ -426,7 +431,7 @@
     var both = !!(state.before && state.after);
     var box = $('previewBox');
     var prevPos = 50;
-    var oldRange = box.querySelector('.ba-range');
+    var oldRange = box.querySelector('.mwba-range');
     if (oldRange) { prevPos = oldRange.value; }
     if (!both) {
       box.innerHTML = '<p class="placeholder" id="placeholder">' +
@@ -443,7 +448,7 @@
     var ratio = state.before.w / state.before.h;
     var L = labels();
     box.innerHTML = sliderMarkup(state.before.url, state.after.url, L, ratio, prevPos);
-    bindSlider(box.querySelector('.ba'));
+    bindSlider(box.querySelector('.mwba'));
 
     var ar = state.after.w / state.after.h;
     $('cropNote').hidden = !(Math.abs(ar - ratio) / ratio > 0.015);
@@ -500,7 +505,7 @@
       try {
         var file = new File([html], 'before-after.html', { type: 'text/html' });
         if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-          navigator.share({ files: [file] }).then(function () { say('共有シートを開きました。'); },
+          navigator.share({ files: [file] }).then(function () { say('共有しました。'); },
             function (e) { if (!e || e.name !== 'AbortError') { say('共有できませんでした。「HTML全文をコピー」をお使いください。', true); } });
           return;
         }
@@ -514,7 +519,7 @@
     a.href = url; a.download = 'before-after.html';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-    say('before-after.html を保存しました。');
+    say('保存を開始しました。ダウンロード先を確認してください。見つからないときは「HTML全文をコピー」をお使いください。');
   });
 
   /* iOSではコピーを主導線にする */
