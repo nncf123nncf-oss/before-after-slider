@@ -88,7 +88,8 @@
 <body>
 <main>
   <h1>ビフォーアフター・スライダーメーカー</h1>
-  <p class="lead">Before写真とAfter写真を選ぶと、左右にドラッグして見比べられるページを作れます。できたHTMLファイルは、自分のサイトに置くか、貼り付けられる場合はコードをコピーして使えます。ログイン不要、写真はこのブラウザの中だけで処理され、送信されません。</p>
+  <p class="note warn" id="pcNote">PCで使う道具です。できたHTMLは、HTMLを貼れる編集画面（ホームページ作成サービスのHTML編集など）か、自分のサイトに置く形で使います。スマホでは、貼り付け先がないと表示できません。</p>
+  <p class="lead">Before写真とAfter写真を選ぶと、左右にドラッグして見比べられるページを作れます。ログイン不要、写真はこのブラウザの中だけで処理され、送信されません。</p>
 
   <div class="panel">
     <h2>写真を選ぶ</h2>
@@ -136,13 +137,13 @@
     <h2>書き出す</h2>
     <p class="note" style="margin-top:0" id="sizeNote">書き出しHTMLの大きさ: 写真を2枚選ぶと表示します</p>
     <p class="note warn" id="sizeWarn" hidden>重くなります。写真を減らすか小さくしてください。</p>
-    <p class="note" id="iosNote" hidden>iPhone・iPadでは「HTMLファイルを保存」が働かない場合があります。その場合は「HTML全文をコピー」を使ってください。</p>
+    <p class="note" id="iosNote" hidden>iPhone・iPadでは、コピーしたHTMLを貼れる編集画面がないと、貼っても表示されません（メモ帳などでは文字になるだけです）。保存したファイルをメールで送ると、警告が出て受け取れないことがあります。PCで開いて使うのがおすすめです。</p>
     <div class="btncol" id="btnCol">
       <button type="button" class="btn" id="saveBtn" disabled>HTMLファイルを保存</button>
       <button type="button" class="btn secondary" id="copyBtn" disabled>HTML全文をコピー</button>
     </div>
     <p class="msg" id="exportMsg" role="status" aria-live="polite"></p>
-    <p class="note">サイトの種類によっては貼り付けられない場合があります。貼り付け先でscriptが使えないと、つまみは動きません。幅はページに合わせて自動で決まり、高さは表示領域の70%までです。写真に人が写っている場合は、撮影・公開について本人への確認をお願いします。ビフォーアフターの効果を保証するものではありません。</p>
+    <p class="note">サイトの種類によっては貼り付けられない場合があります。保存したファイルをメールに添付すると、ブロックされることがあります。AirDropやクラウド（ドライブ等）経由で移すか、HTML全文をコピーしてください。貼り付け先でscriptが使えないと、つまみは動きません。幅はページに合わせて自動で決まり、高さは表示領域の70%までです。写真に人が写っている場合は、撮影・公開について本人への確認をお願いします。ビフォーアフターの効果を保証するものではありません。</p>
   </div>
 
   <footer class="mw-footer">
@@ -506,11 +507,11 @@
         var file = new File([html], 'before-after.html', { type: 'text/html' });
         if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
           navigator.share({ files: [file] }).then(function () { say('共有しました。'); },
-            function (e) { if (!e || e.name !== 'AbortError') { say('共有できませんでした。「HTML全文をコピー」をお使いください。', true); } });
+            function (e) { if (!e || e.name !== 'AbortError') { say('共有できませんでした。HTMLを貼れる編集画面があれば「HTML全文をコピー」を、なければPCでお使いください。', true); } });
           return;
         }
       } catch (e) { /* 下のメッセージへ */ }
-      say('この端末ではHTMLファイルを保存できないため、「HTML全文をコピー」をお使いください。', true);
+      say('この端末ではHTMLファイルを保存できません。HTMLを貼れる編集画面があれば「HTML全文をコピー」を、なければPCでお使いください。', true);
       return;
     }
     var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -519,7 +520,7 @@
     a.href = url; a.download = 'before-after.html';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-    say('保存を開始しました。ダウンロード先を確認してください。見つからないときは「HTML全文をコピー」をお使いください。');
+    say('保存を開始しました。ダウンロード先を確認してください。メール添付はブロックされることがあります。AirDrop・クラウド経由か、「HTML全文をコピー」をお使いください。');
   });
 
   /* iOSではコピーを主導線にする */
