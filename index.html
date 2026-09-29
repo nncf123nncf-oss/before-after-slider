@@ -200,10 +200,10 @@
 
   function sliderMarkup(beforeUrl, afterUrl, labels, ratio, pos) {
     return '<div class="mwba" style="--ar:' + ratio.toFixed(4) + ';--p:' + pos + '%">' +
-      '<img class="mwmwba-img mwba-after" src="' + afterUrl + '" alt="' + esc(labels[1]) + '">' +
-      '<img class="mwmwba-img mwba-before" src="' + beforeUrl + '" alt="' + esc(labels[0]) + '">' +
-      '<span class="mwmwba-tag mwba-tag-before">' + esc(labels[0]) + '</span>' +
-      '<span class="mwmwba-tag mwba-tag-after">' + esc(labels[1]) + '</span>' +
+      '<img class="mwba-img mwba-after" src="' + afterUrl + '" alt="' + esc(labels[1]) + '">' +
+      '<img class="mwba-img mwba-before" src="' + beforeUrl + '" alt="' + esc(labels[0]) + '">' +
+      '<span class="mwba-tag mwba-tag-before">' + esc(labels[0]) + '</span>' +
+      '<span class="mwba-tag mwba-tag-after">' + esc(labels[1]) + '</span>' +
       '<span class="mwba-line"></span><span class="mwba-handle">◀▶</span>' +
       '<input class="mwba-range" type="range" min="0" max="100" step="1" value="' + pos + '" aria-label="' +
       esc(labels[0] + 'と' + labels[1] + 'の境目を動かす') + '">' +
